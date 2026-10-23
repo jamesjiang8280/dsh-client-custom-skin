@@ -1,13 +1,8 @@
 # 自定义皮肤 · DSH 本地插件
-
 一个可自行设定 DSH Web 背景图片、并调节对比度/亮度/模糊与可读性遮罩的本地皮肤插件。目标：让 DSH WebUI 在任意背景图上依然**美观、可操作、可读**。
 
-参考实现：`@leon___/dsh-client-liang-intensity-skin`（滑动变祖皮肤）。本插件沿用相同的插件结构（`dsh.client` 声明 + `cordis.patch.yml` + 浏览器半身 CJS bundle），但把「皮肤」抽象为「用户自定义背景图 + 可调对比度」。
-
 ---
-
 ## 功能
-
 - **自定义背景图片**：本地上传（自动压缩到 ≤1920px 的 JPEG，控制在 localStorage 预算内），或粘贴图片链接（`https://…`、相对路径、`data:image/…`）。
 - **图片对比度**：50% – 200%，直接作用于背景图的 CSS `contrast()`。
 - **图片亮度**：50% – 150%。
@@ -22,9 +17,7 @@
 设置入口：`设置 → 通用设置 → 自定义皮肤`。
 
 ---
-
 ## 安装
-
 > 需要先安装 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh` CLI）。
 
 ### 从本地目录安装（推荐，便于迭代）
