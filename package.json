@@ -29,5 +29,9 @@
       ]
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "REPLACE_WITH_YOUR_GITHUB_URL"
+  }
 }
