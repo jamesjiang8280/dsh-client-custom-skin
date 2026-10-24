@@ -30,7 +30,7 @@
 ### 从本地目录安装（推荐，便于迭代）
 
 ```sh
-dsh plugin --profile web add /Users/jamesjiang/ds_harness_workspace/dsh-client-custom-skin
+dsh plugin --profile web add /your_directory/dsh-client-custom-skin
 ```
 
 `dsh plugin` 会把相对/绝对路径解析到**你运行命令的目录**，并以 link 依赖装入 Web profile。改完源码后无需重新安装。
