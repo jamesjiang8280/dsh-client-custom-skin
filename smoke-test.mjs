@@ -404,9 +404,8 @@ assert(themeCalls.length === 0, "Appearance untouched while auto is off");
 assert(localStorage_._map.get("dsh-custom-skin:auto-theme") === "0", "autoTheme persisted off");
 scope.setAutoTheme(true);
 
-// --- independent base colors: sidebar and dialog each get color + alpha ------
+// --- independent base color: only the sidebar can be customized --------------
 assert(scope.getSnapshot().sidebarColor === "", "no sidebar color by default");
-assert(scope.getSnapshot().dialogColor === "", "no dialog color by default");
 assert(document_.body.style.props.get("--cs-sidebar-fill") === undefined, "no sidebar fill var by default");
 
 scope.setSidebarColor("#3366ff");
@@ -414,115 +413,64 @@ scope.setSidebarColorAlpha(40);
 let fill = document_.body.style.props.get("--cs-sidebar-fill");
 assert(fill === "rgb(51 102 255 / 0.4)", "sidebar fill honors color + alpha, got " + fill);
 
-scope.setDialogColor("#ff8800");
-scope.setDialogColorAlpha(75);
-let dialogFill = document_.body.style.props.get("--cs-dialog-fill");
-assert(dialogFill === "rgb(255 136 0 / 0.75)", "dialog fill honors color + alpha, got " + dialogFill);
-assert(document_.body.style.props.get("--cs-sidebar-fill") === fill, "dialog color must not move sidebar");
+// No dialog fill is ever published: dialogs (incl. installation / settings
+// modals) must stay the solid theme color, so the opacity slider exists only
+// for the sidebar.
+assert(document_.body.style.props.get("--cs-dialog-fill") === undefined, "no dialog fill var at all");
 
-// 3-digit hex and range clamping.
+// 3-digit hex expansion and alpha clamping.
 scope.setSidebarColor("#0af");
 assert(document_.body.style.props.get("--cs-sidebar-fill") === "rgb(0 170 255 / 0.4)", "3-digit hex expands, got " + document_.body.style.props.get("--cs-sidebar-fill"));
-scope.setDialogColorAlpha(500);
-assert(scope.getSnapshot().dialogColorAlpha === 100, "alpha clamps to 100");
+scope.setSidebarColorAlpha(500);
+assert(scope.getSnapshot().sidebarColorAlpha === 100, "alpha clamps to 100");
 
-// Clearing a color hands the surface back to the theme.
+// Clearing the sidebar color hands it back to the theme.
 scope.setSidebarColor(null);
 assert(document_.body.style.props.get("--cs-sidebar-fill") === undefined, "sidebar fill var removed when auto");
-// Invalid hex is ignored by apply() rather than emitting a broken value.
-scope.setDialogColor("not-a-color");
-assert(document_.body.style.props.get("--cs-dialog-fill") === undefined, "invalid hex yields no dialog fill");
-scope.setDialogColor("#ff8800");
 
-// --- the dialog opacity slider must work while the color is still "auto" -----
-// Regression guard: an auto color used to clear the fill entirely, which left
-// the opacity slider inert and the settings panel stuck on an opaque theme fill.
-scope.setDialogColor(null);
-scope.setDialogColorAlpha(78);
-assert(!scope.getSnapshot().dialogColor, "dialog color is auto");
-assert(scope.getSnapshot().dialogMatchSidebar === false, "mirror off");
-const autoFill = document_.body.style.props.get("--cs-dialog-fill");
-assert(typeof autoFill === "string" && /\/ 0\.78\)$/.test(autoFill), "auto dialog fill carries the default opacity, got " + autoFill);
-scope.setDialogColorAlpha(30);
-assert(/\/ 0\.3\)$/.test(document_.body.style.props.get("--cs-dialog-fill")), "opacity slider changes the auto dialog fill, got " + document_.body.style.props.get("--cs-dialog-fill"));
-scope.setDialogColorAlpha(78);
-
-// --- "Same as sidebar": the dialog mirrors BOTH color and opacity ------------
-assert(scope.getSnapshot().dialogMatchSidebar === false, "dialog mirror off by default");
+// Invalid hex is ignored rather than emitting a broken value.
+scope.setSidebarColor("not-a-color");
+assert(document_.body.style.props.get("--cs-sidebar-fill") === undefined, "invalid hex yields no sidebar fill");
 scope.setSidebarColor("#3366ff");
-scope.setSidebarColorAlpha(40);
-scope.setDialogColor("#ff8800");
-scope.setDialogColorAlpha(75);
-scope.setDialogMatchSidebar(true);
-assert(scope.getSnapshot().dialogMatchSidebar === true, "mirror flag persists in snapshot");
-fill = document_.body.style.props.get("--cs-dialog-fill");
-assert(fill === "rgb(51 102 255 / 0.4)", "dialog mirrors the sidebar color AND its opacity, got " + fill);
 
-// The sidebar itself must stay untouched while mirroring.
-assert(document_.body.style.props.get("--cs-sidebar-fill") === "rgb(51 102 255 / 0.4)", "sidebar unaffected by mirroring");
+// Sidebar fill persists, no dialog keys exist.
+assert(localStorage_._map.get("dsh-custom-skin:sidebar-color") === "#3366ff", "sidebar color persisted");
+assert(!localStorage_._map.has("dsh-custom-skin:dialog-color"), "no dialog-color key ever written");
+assert(!localStorage_._map.has("dsh-custom-skin:dialog-match-sidebar"), "no dialog-match-sidebar key ever written");
 
-// Changing the sidebar while mirrored keeps the dialog in lockstep.
-scope.setSidebarColorAlpha(90);
-assert(document_.body.style.props.get("--cs-dialog-fill") === "rgb(51 102 255 / 0.9)", "mirrored dialog tracks later sidebar edits, got " + document_.body.style.props.get("--cs-dialog-fill"));
-
-// With no custom sidebar color, the mirror copies the sidebar's EFFECTIVE fill
-// (scheme color at the sidebar transparency slider), not "nothing".
-scope.setSidebarColor(null);
-assert(
-	document_.body.style.props.get("--cs-dialog-fill") === document_.body.style.props.get("--cs-sidebar"),
-	"mirror with auto sidebar copies the slider-driven sidebar fill, got "
-		+ document_.body.style.props.get("--cs-dialog-fill")
-		+ " vs " + document_.body.style.props.get("--cs-sidebar")
-);
-
-// Turning the mirror back off restores the dialog's own color.
-scope.setSidebarColor("#3366ff");
-scope.setDialogMatchSidebar(false);
-assert(document_.body.style.props.get("--cs-dialog-fill") === "rgb(255 136 0 / 0.75)", "dialog returns to its own color, got " + document_.body.style.props.get("--cs-dialog-fill"));
-assert(localStorage_._map.get("dsh-custom-skin:dialog-match-sidebar") === "0", "mirror flag persisted");
-
-// Leave sidebar on "auto" and restore the dialog alpha so the pre-existing
-// persistence assertions below still describe the same state.
-scope.setSidebarColor(null);
-scope.setDialogColorAlpha(100);
-
-// --- the dialog fill also covers the composer / typing area ------------------
-// The injected stylesheet lives in <style> tags; read them from the document head.
+// --- token mapping: chat typing area follows the sidebar fill; everything else stays theme ---
 const styleText = document_.head.children.map((n) => n.textContent || "").join("\n");
 assert(styleText.length > 0, "the scoped stylesheet was injected into <head>");
-assert(styleText.includes("--dsw-specific-input-major:var(--cs-dialog-fill"), "composer/typing token follows the dialog fill");
-assert(styleText.includes("--dsw-alias-bg-layer-2:var(--cs-dialog-fill"), "dialog panel token follows the dialog fill");
+assert(styleText.includes("--dsw-specific-input-major:var(--cs-sidebar-fill"), "composer/typing token follows the sidebar fill");
+assert(!styleText.includes("--dsw-alias-bg-layer-2:var(--cs-dialog-fill"), "dialog panel must not follow a dialog fill");
 assert(styleText.includes("--dsw-specific-sidebar-fill:var(--cs-sidebar-fill"), "sidebar token stays independent");
 
 // --- the Settings modal is exempt: it must stay solid theme black/white ------
-// The shell marks the settings panel with the stable data-shortcut-modal hook.
 assert(styleText.includes("[data-shortcut-modal='settings']"), "settings panel exclusion rule exists");
 const lightReset = /html body\[data-cs-skin='on'\] \[data-shortcut-modal='settings'\]\{([^}]*)\}/.exec(styleText);
 const darkReset = /html body\[data-cs-skin='on'\]\[data-ds-dark-theme\] \[data-shortcut-modal='settings'\]\{([^}]*)\}/.exec(styleText);
 assert(lightReset !== null, "light reset rule for the settings panel");
 assert(darkReset !== null, "dark reset rule for the settings panel");
-// Every token the skin overrides must be restored inside the panel.
 for (const tok of ["--dsw-alias-bg-layer-1", "--dsw-alias-bg-layer-2", "--dsw-alias-bg-layer-3", "--dsw-specific-sidebar-fill", "--dsw-specific-input-major", "--dsw-specific-menu", "--dsw-alias-bg-module-platform"]) {
 	assert(lightReset[1].includes(tok + ":"), "light reset restores " + tok);
 	assert(darkReset[1].includes(tok + ":"), "dark reset restores " + tok);
 }
-// And they must resolve to the theme's SOLID static palette, not the skin vars.
 assert(lightReset[1].includes("--dsw-alias-bg-layer-2:var(--dsw-static-neutral-bluish-00)"), "light panel = solid theme white");
 assert(darkReset[1].includes("--dsw-alias-bg-layer-2:var(--dsw-static-neutral-bluish-850)"), "dark panel = solid theme dark");
 assert(!lightReset[1].includes("--cs-"), "panel reset must not reference skin variables");
 assert(!darkReset[1].includes("--cs-"), "panel reset must not reference skin variables");
 
-// Both colors survive a persistence round-trip.
-assert(localStorage_._map.get("dsh-custom-skin:sidebar-color") === "", "sidebar color persisted as auto");
-assert(localStorage_._map.get("dsh-custom-skin:dialog-color") === "#ff8800", "dialog color persisted");
-assert(localStorage_._map.get("dsh-custom-skin:dialog-color-alpha") === "100", "dialog alpha persisted");
-
 // --- render the row component (called directly; hooks are stubbed) -----------
+// No custom color so the "follows theme" fallback text is rendered.
+scope.setSidebarColor(null);
 const row = itemSlot.component({ t: (k) => k, scope });
 assert(row && row.type === "div", "row renders a div");
 const flat = JSON.stringify(row);
 for (const needle of ["cs-group", "contrast", "wash", "sidebar", "autoTheme", "cs-color__picker", "colorInherit"]) {
 	assert(flat.includes(needle), "row has " + needle);
+}
+for (const nope of ["dialogColor", "dialogMatchSidebar", "对话框底色", "与侧边栏相同", "Dialog base color", "Same as sidebar"]) {
+	assert(!flat.includes(nope), "row must not contain " + nope);
 }
 
 // --- disable / re-enable -----------------------------------------------------
@@ -541,13 +489,9 @@ assert(scope.getSnapshot().contrast === 100, "reset contrast");
 assert(scope.getSnapshot().sidebar === 15, "reset sidebar");
 assert(scope.getSnapshot().image === "data:image/png;base64,CCCC", "reset keeps image");
 assert(scope.getSnapshot().sidebarColor === null, "reset clears sidebar color");
-assert(scope.getSnapshot().dialogColor === null, "reset clears dialog color");
-assert(scope.getSnapshot().dialogMatchSidebar === false, "reset clears the mirror flag");
 assert(localStorage_._map.get("dsh-custom-skin:sidebar-color") === "", "reset persists the cleared sidebar color");
-assert(localStorage_._map.get("dsh-custom-skin:dialog-color") === "", "reset persists the cleared dialog color");
-assert(localStorage_._map.get("dsh-custom-skin:dialog-match-sidebar") === "0", "reset persists the mirror flag");
-assert(localStorage_._map.get("dsh-custom-skin:dialog-color-alpha") === "78", "reset restores the default dialog opacity");
 
+// --- dispose every effect without throwing ----------------------------------
 // --- dispose every effect without throwing ----------------------------------
 for (const { dispose } of effects) {
 	if (typeof dispose === "function") dispose();
