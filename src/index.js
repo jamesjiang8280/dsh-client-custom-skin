@@ -1,5 +1,5 @@
 /**
- * @leon___/dsh-client-custom-skin — host half.
+ * @jamesjiang8280/dsh-client-custom-skin — host half.
  *
  * The custom-skin feature is entirely browser-side: the user's background
  * image and appearance preferences live in localStorage, matching the same

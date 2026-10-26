@@ -50,7 +50,7 @@ dsh --profile web --dump-config | grep -B1 -A2 custom-skin
 ### 卸载
 
 ```sh
-dsh plugin --profile web remove @leon___/dsh-client-custom-skin
+dsh plugin --profile web remove @jamesjiang8280/dsh-client-custom-skin
 ```
 
 ---

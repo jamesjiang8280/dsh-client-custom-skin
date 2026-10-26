@@ -1,5 +1,5 @@
 /**
- * Smoke test for @leon___/dsh-client-custom-skin.
+ * Smoke test for @jamesjiang8280/dsh-client-custom-skin.
  *
  * Simulates the DSH shell environment (window.__ModuleLoader__, localStorage,
  * a minimal DOM, and stub react / react/jsx-runtime) then:
@@ -313,7 +313,7 @@ exports_.apply(ctx);
 const assert = (cond, msg) => { if (!cond) throw new Error("ASSERT: " + msg); };
 const tick = () => new Promise((resolve) => setTimeout(resolve, 10));
 
-assert(registry.id === "@leon___/dsh-client-custom-skin", "bundle id");
+assert(registry.id === "@jamesjiang8280/dsh-client-custom-skin", "bundle id");
 assert(localeNamespaces.some((x) => x.ns === "custom-skin"), "locale registered");
 
 // A dedicated settings section + its own child item slot (no longer in General).
