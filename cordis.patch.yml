@@ -1,4 +1,4 @@
 - insert:
     - id: custom-skin
-      name: '@leon___/dsh-client-custom-skin'
+      name: '@jamesjiang8280/dsh-client-custom-skin'
       config: {}
