@@ -1,5 +1,5 @@
 {
-  "name": "jamesjiang8280/dsh-client-custom-skin",
+  "name": "@jamesjiang8280/dsh-client-custom-skin",
   "version": "0.1.0",
   "description": "自定义皮肤：为 DSH Web 设置自定义背景图片，并调节对比度/亮度/模糊/可读性遮罩，让界面美观、可操作、可读。",
   "type": "module",
